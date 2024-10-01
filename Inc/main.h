@@ -77,6 +77,9 @@ void Error_Handler(void);
 #define LD2_USER_GPIO_Port GPIOA
 #define COFF2_CTRL_Pin GPIO_PIN_5
 #define COFF2_CTRL_GPIO_Port GPIOC
+#define OUT_FLT1_Pin GPIO_PIN_10
+#define OUT_FLT1_GPIO_Port GPIOB
+#define OUT_FLT1_EXTI_IRQn EXTI15_10_IRQn
 #define SPI_NCS_Pin GPIO_PIN_12
 #define SPI_NCS_GPIO_Port GPIOB
 #define SPI_SCLK_Pin GPIO_PIN_13
@@ -84,6 +87,8 @@ void Error_Handler(void);
 #define OUT2_DIAG_Pin GPIO_PIN_6
 #define OUT2_DIAG_GPIO_Port GPIOC
 #define OUT2_DIAG_EXTI_IRQn EXTI9_5_IRQn
+#define OUT_CTRL_Pin GPIO_PIN_7
+#define OUT_CTRL_GPIO_Port GPIOC
 #define VCC1_DSC_Pin GPIO_PIN_8
 #define VCC1_DSC_GPIO_Port GPIOC
 #define OUT2_DSC_Pin GPIO_PIN_9
@@ -103,6 +108,9 @@ void Error_Handler(void);
 #define OUT1_DIAG_EXTI_IRQn EXTI15_10_IRQn
 #define COFF1_CTRL_Pin GPIO_PIN_2
 #define COFF1_CTRL_GPIO_Port GPIOD
+#define OUT_FLT2_Pin GPIO_PIN_4
+#define OUT_FLT2_GPIO_Port GPIOB
+#define OUT_FLT2_EXTI_IRQn EXTI4_IRQn
 #define TP2_CTRL_Pin GPIO_PIN_7
 #define TP2_CTRL_GPIO_Port GPIOB
 #define OUT1_CTRL_Pin GPIO_PIN_8

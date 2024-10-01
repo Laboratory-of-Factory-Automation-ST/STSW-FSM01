@@ -18,66 +18,70 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include <stdlib.h>
+#include <string.h>
 #include "fsm01m1_eval_diagnostic_driver.h"
 #include "fsm01m1_eval_driver.h"
-#include "fsm01m1_eval_usart_driver.h"
-#include "strtok_r.h"
-#include "string.h"
+#include "fsm01m1_eval_pulse_driver.h"
+#include "nucleo_exports.h"
+#include "nucleo_usart_driver.h"
 
 /* Private typedef -----------------------------------------------------------*/
+typedef enum DIAG_Device_t {
+	all,
+	vccx,
+	outx,
+	vcc,
+	vcc1,
+	vcc1_dsc,
+	vcc2,
+	vcc2_dsc,
+	out1,
+	out1_dsc,
+	out2,
+	out2_dsc,
+	in1,
+	in2,
+	coff1,
+	coff2,
+	tp1,
+	tp2
+} DIAG_DeviceTypeDef;
+
+typedef enum DIAG_Action_t {
+	on,
+	off,
+	state,
+	states,
+	level,
+	levels
+} DIAG_ActionTypeDef;
+
 typedef enum USART_Format_t {
 	numerical,
 	logical
-} USART_FormatTypeDef;
+} DIAG_FormatTypeDef;
 
 /* Private variables ---------------------------------------------------------*/
 
 /* buffer for command tokenization */
-char * token_ctx;
+static char * token_ctx;
 
-/* registered devices */
-DIAG_DeviceTypeDef devices[15] = {
-		vcc,
-		vcc1,
-		vcc1_dsc,
-		vcc2,
-		vcc2_dsc,
-		out1,
-		out1_dsc,
-		out2,
-		out2_dsc,
-		in1,
-		in2,
-		coff1,
-		coff2,
-		tp1,
-		tp2
-};
-
-DIAG_DeviceTypeDef outputs[2] = { out1, out2 };
-
-DIAG_DeviceTypeDef sources[3] = { vcc, vcc1, vcc2 };
-
-/* registered actions */
-DIAG_ActionTypeDef actions[6] = {
-		on,
-		off,
-		state,
-		states,
-		level,
-		levels
-};
-
-USART_MessageTypeDef cmd;
-USART_MessageTypeDef msg;
+static USART_MessageTypeDef cmd;
+static USART_MessageTypeDef msg;
 /* Private function prototypes -----------------------------------------------*/
 void FSM01M1_DIAG_splash_msg();
-void FSM01M1_DIAG_read(DIAG_DeviceTypeDef dev, USART_FormatTypeDef fmt);
+void FSM01M1_DIAG_read(DIAG_DeviceTypeDef dev, DIAG_FormatTypeDef fmt);
 void FSM01M1_DIAG_reset_devices();
 void FSM01M1_DIAG_switch(DIAG_DeviceTypeDef dev, DIAG_ActionTypeDef act);
 void FSM01M1_DIAG_resolve(char * cmd, DIAG_DeviceTypeDef target);
 void FSM01M1_DIAG_levels();
 void FSM01M1_DIAG_states();
+void FSM01M1_DIAG_help();
+void FSM01M1_DIAG_list_devices();
+void FSM01M1_DIAG_list_actions();
+void FSM01M1_DIAG_pulse(DIAG_DeviceTypeDef dev, char * config_str);
+void FSM01M1_DIAG_single_pulse(DIAG_DeviceTypeDef dev, uint32_t duration);
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -87,20 +91,75 @@ void FSM01M1_DIAG_states();
  * @retval None
  */
 void FSM01M1_DIAG_IO_Loop(UART_HandleTypeDef * huart) {
-	FSM01M1_USART_vCOM_Config(huart);
-	cmd = FSM01M1_USART_vCOM_CreateMessage();
-	msg = FSM01M1_USART_vCOM_CreateMessage();
+	NUCLEO_USART_vCOM_Config(huart);
+	cmd = NUCLEO_USART_vCOM_CreateMessage();
+	msg = NUCLEO_USART_vCOM_CreateMessage();
 
 	FSM01M1_DIAG_splash_msg();
 	while(1) {
 		if (cmd.flag == ready) {
+			if(strncmp(cmd.data, "fsm01m1_", 8) != 0) return;
+
 			FSM01M1_DIAG_resolve(cmd.data, all);
 			cmd.Reset(&cmd);
 			cmd.flag = idle;
 		}
 		if (cmd.flag == idle) {
-			FSM01M1_USART_vCOM_ReadLine(&cmd);
+			NUCLEO_USART_vCOM_ReadLine(&cmd);
 		}
+	}
+}
+
+/**
+ * @brief Provides command resolution services
+ * @param cmd: command
+ * @param target: device
+ * @retval None
+ */
+void FSM01M1_DIAG_resolve(char * cmd, DIAG_DeviceTypeDef target) {
+	if (cmd[0] == '\r' || cmd[0] == '\n') cmd = cmd + 1;
+	char * arg = (char *) strtok_r(cmd, " ", &token_ctx);
+
+	if (arg == NULL) return;
+	arg[strcspn(arg, "\r\n")] = '\0';
+	arg = &arg[strspn(arg, "fsm01m1_")];
+
+	if (arg[0] == '\0') return;
+	else if (strcmp(arg, "vcc") == 0) FSM01M1_DIAG_resolve(NULL, vcc);
+	else if (strcmp(arg, "vcc1") == 0) FSM01M1_DIAG_resolve(NULL, vcc1);
+	else if (strcmp(arg, "vcc1_dsc") == 0) FSM01M1_DIAG_resolve(NULL, vcc1_dsc);
+	else if (strcmp(arg, "vcc2") == 0) FSM01M1_DIAG_resolve(NULL, vcc2);
+	else if (strcmp(arg, "vcc2_dsc") == 0) FSM01M1_DIAG_resolve(NULL, vcc2_dsc);
+	else if (strcmp(arg, "vccx") == 0) FSM01M1_DIAG_resolve(NULL, vccx);
+	else if (strcmp(arg, "out1") == 0) FSM01M1_DIAG_resolve(NULL, out1);
+	else if (strcmp(arg, "out1_dsc") == 0) FSM01M1_DIAG_resolve(NULL, out1_dsc);
+	else if (strcmp(arg, "out2") == 0) FSM01M1_DIAG_resolve(NULL, out2);
+	else if (strcmp(arg, "out2_dsc") == 0) FSM01M1_DIAG_resolve(NULL, out2_dsc);
+	else if (strcmp(arg, "outx") == 0) FSM01M1_DIAG_resolve(NULL, outx);
+	else if (strcmp(arg, "coff1") == 0) FSM01M1_DIAG_resolve(NULL, coff1);
+	else if (strcmp(arg, "coff2") == 0) FSM01M1_DIAG_resolve(NULL, coff2);
+	else if (strcmp(arg, "tp1") == 0) FSM01M1_DIAG_resolve(NULL, tp1);
+	else if (strcmp(arg, "tp2") == 0) FSM01M1_DIAG_resolve(NULL, tp2);
+	else if (strcmp(arg, "in1") == 0) FSM01M1_DIAG_resolve(NULL, in1);
+	else if (strcmp(arg, "in2") == 0) FSM01M1_DIAG_resolve(NULL, in2);
+	else if (strcmp(arg, "on") == 0) FSM01M1_DIAG_switch(target, on);
+	else if (strcmp(arg, "off") == 0) FSM01M1_DIAG_switch(target, off);
+	else if (strcmp(arg, "state") == 0) FSM01M1_DIAG_read(target, logical);
+	else if (strcmp(arg, "level") == 0) FSM01M1_DIAG_read(target, numerical);
+	else if (strcmp(arg, "levels") == 0) FSM01M1_DIAG_levels();
+	else if (strcmp(arg, "states") == 0) FSM01M1_DIAG_states();
+	else if (strcmp(arg, "help") == 0) FSM01M1_DIAG_help();
+	else if (strcmp(arg, "functions") == 0) FSM01M1_DIAG_list_devices();
+	else if (strcmp(arg, "actions") == 0) FSM01M1_DIAG_list_actions();
+	else if (strcmp(arg, "clear") == 0) NUCLEO_USART_vCOM_Clear();
+	else if (strcmp(arg, "pulse") == 0) {
+//		FSM01M1_DIAG_pulse(target, cmd);
+		FSM01M1_DIAG_single_pulse(out1, 1000);
+	}
+	else {
+		msg.Reset(&msg);
+		msg.AppendStr("Invalid command, no actions performed", &msg);
+		NUCLEO_USART_vCOM_WriteLine(&msg);
 	}
 }
 
@@ -114,8 +173,8 @@ void FSM01M1_DIAG_splash_msg() {
 	msg.Reset(&msg);
 	msg.AppendStr("***** STEVAL-FSM01M1 DIAGNOSTIC TOOL *****\n", &msg);
 	msg.AppendStr("* Type help for usage information", &msg);
-	FSM01M1_USART_vCOM_WriteLine(&msg);
-	FSM01M1_USART_vCOM_WriteChar('\n');
+	NUCLEO_USART_vCOM_WriteLine(&msg);
+	NUCLEO_USART_vCOM_WriteChar('\n');
 }
 
 /**
@@ -130,7 +189,7 @@ void FSM01M1_DIAG_help() {
 			"- Type 'actions' for action list\n"
 			"- Type 'clear' to clear text from terminal\n"
 			/*"- Use 'x' in device identifiers for numerical wildcard (e.g. outx selects all outputs)\n"*/, &msg);
-	FSM01M1_USART_vCOM_Write(&msg);
+	NUCLEO_USART_vCOM_Write(&msg);
 }
 
 /**
@@ -138,11 +197,9 @@ void FSM01M1_DIAG_help() {
  * @retval None
  */
 void FSM01M1_DIAG_list_devices() {
-	int dev_count = sizeof(devices)/sizeof(DIAG_DeviceTypeDef);
-
 	msg.Reset(&msg);
-	for (int i = 0; i < dev_count; i += 1) {
-		switch (devices[i]) {
+	for (int i = vcc; i <= tp2; i += 1) {
+		switch (i) {
 			case vcc:
 				msg.AppendStr("vcc\n", &msg);
 				break;
@@ -193,7 +250,7 @@ void FSM01M1_DIAG_list_devices() {
 		}
 	}
 
-	FSM01M1_USART_vCOM_Write(&msg);
+	NUCLEO_USART_vCOM_Write(&msg);
 }
 
 /**
@@ -201,11 +258,9 @@ void FSM01M1_DIAG_list_devices() {
  * @retval None
  */
 void FSM01M1_DIAG_list_actions() {
-	int act_len = sizeof(actions)/sizeof(DIAG_ActionTypeDef);
-
 	msg.Reset(&msg);
-	for (int i = 0; i < act_len; i += 1) {
-		switch (actions[i]) {
+	for (int i = on; i <= levels; i += 1) {
+		switch (i) {
 			case on:
 				msg.AppendStr("on\n", &msg);
 				break;
@@ -231,55 +286,7 @@ void FSM01M1_DIAG_list_actions() {
 		}
 	}
 
-	FSM01M1_USART_vCOM_Write(&msg);
-}
-
-/**
- * @brief Provides command resolution services
- * @param cmd: command
- * @param target: device
- * @retval None
- */
-void FSM01M1_DIAG_resolve(char * cmd, DIAG_DeviceTypeDef target) {
-	if (cmd[0] == '\r' || cmd[0] == '\n') cmd = cmd + 1;
-	char * arg = (char *) strtok_r(cmd, " ", &token_ctx);
-
-	if (arg == NULL) return;
-	arg[strcspn(arg, "\r\n")] = '\0';
-
-	if (arg[0] == '\0') return;
-	else if (strcmp(arg, "vcc") == 0) FSM01M1_DIAG_resolve(NULL, vcc);
-	else if (strcmp(arg, "vcc1") == 0) FSM01M1_DIAG_resolve(NULL, vcc1);
-	else if (strcmp(arg, "vcc1_dsc") == 0) FSM01M1_DIAG_resolve(NULL, vcc1_dsc);
-	else if (strcmp(arg, "vcc2") == 0) FSM01M1_DIAG_resolve(NULL, vcc2);
-	else if (strcmp(arg, "vcc2_dsc") == 0) FSM01M1_DIAG_resolve(NULL, vcc2_dsc);
-	else if (strcmp(arg, "vccx") == 0) FSM01M1_DIAG_resolve(NULL, vccx);
-	else if (strcmp(arg, "out1") == 0) FSM01M1_DIAG_resolve(NULL, out1);
-	else if (strcmp(arg, "out1_dsc") == 0) FSM01M1_DIAG_resolve(NULL, out1_dsc);
-	else if (strcmp(arg, "out2") == 0) FSM01M1_DIAG_resolve(NULL, out2);
-	else if (strcmp(arg, "out2_dsc") == 0) FSM01M1_DIAG_resolve(NULL, out2_dsc);
-	else if (strcmp(arg, "outx") == 0) FSM01M1_DIAG_resolve(NULL, outx);
-	else if (strcmp(arg, "coff1") == 0) FSM01M1_DIAG_resolve(NULL, coff1);
-	else if (strcmp(arg, "coff2") == 0) FSM01M1_DIAG_resolve(NULL, coff2);
-	else if (strcmp(arg, "tp1") == 0) FSM01M1_DIAG_resolve(NULL, tp1);
-	else if (strcmp(arg, "tp2") == 0) FSM01M1_DIAG_resolve(NULL, tp2);
-	else if (strcmp(arg, "in1") == 0) FSM01M1_DIAG_resolve(NULL, in1);
-	else if (strcmp(arg, "in2") == 0) FSM01M1_DIAG_resolve(NULL, in2);
-	else if (strcmp(arg, "on") == 0) FSM01M1_DIAG_switch(target, on);
-	else if (strcmp(arg, "off") == 0) FSM01M1_DIAG_switch(target, off);
-	else if (strcmp(arg, "state") == 0) FSM01M1_DIAG_read(target, logical);
-	else if (strcmp(arg, "level") == 0) FSM01M1_DIAG_read(target, numerical);
-	else if (strcmp(arg, "levels") == 0) FSM01M1_DIAG_levels();
-	else if (strcmp(arg, "states") == 0) FSM01M1_DIAG_states();
-	else if (strcmp(arg, "help") == 0) FSM01M1_DIAG_help();
-	else if (strcmp(arg, "functions") == 0) FSM01M1_DIAG_list_devices();
-	else if (strcmp(arg, "actions") == 0) FSM01M1_DIAG_list_actions();
-	else if (strcmp(arg, "clear") == 0) FSM01M1_USART_vCOM_Clear();
-	else {
-		msg.Reset(&msg);
-		msg.AppendStr("Invalid command, no actions performed", &msg);
-		FSM01M1_USART_vCOM_WriteLine(&msg);
-	}
+	NUCLEO_USART_vCOM_Write(&msg);
 }
 
 /**
@@ -306,12 +313,9 @@ void FSM01M1_DIAG_switch(DIAG_DeviceTypeDef dev, DIAG_ActionTypeDef act) {
 			if (act == on) FSM01M1_VCC2_DSC_ON();
 			else FSM01M1_VCC2_DSC_OFF();
 			break;
-		case vccx: {
-				int vcc_count = sizeof(sources)/sizeof(DIAG_DeviceTypeDef);
-				for (int i = 0; i < vcc_count; i += 1) {
-					FSM01M1_DIAG_switch(sources[i], act);
-				}
-			}
+		case vccx:
+			FSM01M1_DIAG_switch(vcc1, act);
+			FSM01M1_DIAG_switch(vcc2, act);
 			break;
 		case out1:
 			if (act == on) FSM01M1_OUT1_CTRL_ON();
@@ -330,12 +334,9 @@ void FSM01M1_DIAG_switch(DIAG_DeviceTypeDef dev, DIAG_ActionTypeDef act) {
 			else FSM01M1_OUT2_DSC_OFF();
 			break;
 
-		case outx: {
-				int out_count = sizeof(outputs)/sizeof(DIAG_DeviceTypeDef);
-				for (int i = 0; i < out_count; i += 1) {
-					FSM01M1_DIAG_switch(outputs[i], act);
-				}
-			}
+		case outx:
+			FSM01M1_DIAG_switch(out1, act);
+			FSM01M1_DIAG_switch(out2, act);
 			break;
 		case coff1:
 			if (act == on) FSM01M1_CUTOFF1_CTRL_ON();
@@ -366,7 +367,7 @@ void FSM01M1_DIAG_switch(DIAG_DeviceTypeDef dev, DIAG_ActionTypeDef act) {
  * @param fmt: reading formatting
  * @retval None
  */
-void FSM01M1_DIAG_read(DIAG_DeviceTypeDef dev, USART_FormatTypeDef fmt) {
+void FSM01M1_DIAG_read(DIAG_DeviceTypeDef dev, DIAG_FormatTypeDef fmt) {
 	msg.Reset(&msg);
 
 	int logic = -1;
@@ -448,7 +449,7 @@ void FSM01M1_DIAG_read(DIAG_DeviceTypeDef dev, USART_FormatTypeDef fmt) {
 	}
 
 	msg.AppendStr("\n", &msg);
-	FSM01M1_USART_vCOM_Write(&msg);
+	NUCLEO_USART_vCOM_Write(&msg);
 }
 
 /**
@@ -456,10 +457,8 @@ void FSM01M1_DIAG_read(DIAG_DeviceTypeDef dev, USART_FormatTypeDef fmt) {
  * @retval None
  */
 void FSM01M1_DIAG_levels() {
-	int dev_count = sizeof(devices)/sizeof(DIAG_DeviceTypeDef);
-
-	for(int i = 0; i < dev_count; i += 1)
-		FSM01M1_DIAG_read(devices[i], numerical);
+	for(int i = vcc; i <= tp2; i += 1)
+		FSM01M1_DIAG_read(i, numerical);
 }
 
 /**
@@ -468,8 +467,46 @@ void FSM01M1_DIAG_levels() {
  * @retval None
  */
 void FSM01M1_DIAG_states() {
-	int dev_count = sizeof(devices)/sizeof(DIAG_DeviceTypeDef);
+	for(int i = vcc; i <= tp2 ; i += 1)
+		FSM01M1_DIAG_read(i, logical);
+}
 
-	for(int i = 0; i < dev_count; i += 1)
-		FSM01M1_DIAG_read(devices[i], logical);
+/**
+ * @brief Provides device single pulse services
+ * @param dev: device
+ * @param act: action
+ * @retval None
+ */
+void FSM01M1_DIAG_single_pulse(DIAG_DeviceTypeDef dev, uint32_t duration) {
+	switch (dev) {
+		case out1:
+			FSM01M1_OUT1_CTRL_ON();
+			HAL_Delay(duration);
+			FSM01M1_OUT1_CTRL_OFF();
+			break;
+		default:
+			break;
+	}
+}
+
+void FSM01M1_DIAG_pulse(DIAG_DeviceTypeDef dev, char * config_str) {
+	char * pulse_params[2] = {0};
+	for (unsigned int i = 0; i < 2; i += 1) {
+		char ** param_ptr = &pulse_params[i];
+		*param_ptr = (char *) strtok_r(config_str, ",", &token_ctx);
+		uint32_t len = strcspn(*param_ptr, "\r\n");
+		*param_ptr[len] = '\0';
+	}
+
+	switch (dev) {
+		case out1:
+			FSM01M1_PULSE_PulseGen_TIM_IT(OUT1_TIM_HANDLE, OUT1_TIM, OUT1_TIM_CHANNEL, 1, 65535, 25000);
+			break;
+		case out2:
+			FSM01M1_PULSE_PulseGen_TIM_IT(OUT2_TIM_HANDLE, OUT2_TIM, OUT2_TIM_CHANNEL, 1, 65535, 25000);
+			break;
+		default:
+			// print informative message
+			break;
+	}
 }

@@ -26,40 +26,12 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "fsm01m1_eval_usart_driver.h"
+#include "nucleo_usart_driver.h"
 #include "stdbool.h"
 
 
 /* Exported types ------------------------------------------------------------*/
-typedef enum {
-	all,
-	vcc,
-	vcc1,
-	vcc1_dsc,
-	vcc2,
-	vcc2_dsc,
-	vccx,
-	out1,
-	out1_dsc,
-	out2,
-	out2_dsc,
-	outx,
-	in1,
-	in2,
-	coff1,
-	coff2,
-	tp1,
-	tp2
-} DIAG_DeviceTypeDef;
 
-typedef enum {
-	on,
-	off,
-	state,
-	states,
-	level,
-	levels
-} DIAG_ActionTypeDef;
 
 /* Exported functions --------------------------------------------------------*/
 void FSM01M1_DIAG_IO_Loop(UART_HandleTypeDef * huart);

@@ -19,6 +19,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "fsm01m1_eval_driver.h"
+#include "fsm01m1_eval_pulse_driver.h"
+
 
 /* Private variables ---------------------------------------------------------*/
 extern SPI_HandleTypeDef hspi2;
@@ -240,7 +242,8 @@ void FSM01M1_VCC1_DSC_OFF() {
  */
 void FSM01M1_OUT1_CTRL_ON() {
 	FSM01M1_VCC1_ON();
-	HAL_GPIO_WritePin(OUT1_CTRL_GPIO_Port, OUT1_CTRL_Pin, GPIO_PIN_SET);
+//	HAL_GPIO_WritePin(OUT1_CTRL_GPIO_Port, OUT1_CTRL_Pin, GPIO_PIN_SET);
+	FSM01M1_PULSE_PulseGen_TIM_High(OUT1_TMR);
 }
 
 /**
@@ -248,7 +251,8 @@ void FSM01M1_OUT1_CTRL_ON() {
  * @retval None
  */
 void FSM01M1_OUT1_CTRL_OFF() {
-	HAL_GPIO_WritePin(OUT1_CTRL_GPIO_Port, OUT1_CTRL_Pin, GPIO_PIN_RESET);
+//	HAL_GPIO_WritePin(OUT1_CTRL_GPIO_Port, OUT1_CTRL_Pin, GPIO_PIN_RESET);
+	FSM01M1_PULSE_PulseGen_TIM_Low(OUT1_TMR);
 }
 
 /**
@@ -321,7 +325,8 @@ void FSM01M1_VCC2_DSC_OFF() {
  */
 void FSM01M1_OUT2_CTRL_ON() {
 	FSM01M1_VCC2_ON();
-	HAL_GPIO_WritePin(OUT2_CTRL_GPIO_Port, OUT2_CTRL_Pin, GPIO_PIN_SET);
+//	HAL_GPIO_WritePin(OUT2_CTRL_GPIO_Port, OUT2_CTRL_Pin, GPIO_PIN_SET);
+	FSM01M1_PULSE_PulseGen_TIM_High(OUT2_TMR);
 }
 
 /**
@@ -329,7 +334,8 @@ void FSM01M1_OUT2_CTRL_ON() {
  * @retval None
  */
 void FSM01M1_OUT2_CTRL_OFF() {
-	HAL_GPIO_WritePin(OUT2_CTRL_GPIO_Port, OUT2_CTRL_Pin, GPIO_PIN_RESET);
+//	HAL_GPIO_WritePin(OUT2_CTRL_GPIO_Port, OUT2_CTRL_Pin, GPIO_PIN_RESET);
+	FSM01M1_PULSE_PulseGen_TIM_Low(OUT2_TMR);
 }
 
 /**
@@ -682,7 +688,7 @@ __weak void FSM01M1_OUT2_DIAG_alert_callback() {
  * @param GPIO_Pin: interrupting pin
  * @retval None
  */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+void FSM01M1_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	/* NOTE: This function Should not be modified, when the callback is needed,
 		           the FSM01M1_OUT2_DIAG_alert_callback could be implemented in the user file
 		   */

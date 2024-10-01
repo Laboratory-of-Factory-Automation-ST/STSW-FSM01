@@ -12,7 +12,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "fsm01m1_eval_tests.h"
 #include "fsm01m1_eval_driver.h"
-#include "fsm01m1_eval_usart_driver.h"
+//#include "fsm01m1_eval_usart_driver.h"
+#include "nucleo_usart_driver.h"
 /* Private types -------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
@@ -399,7 +400,7 @@ void FSM01M1_TEST_PROC_check_expected_voltages(bool * vcc, bool * vcc1, bool * o
 void FSM01M1_TEST_CASE_expected_voltages_test(bool vcc, bool vcc1, bool out1, bool vcc2, bool out2) {
 	FSM01M1_TEST_PROC_check_expected_voltages(&vcc, &vcc1, &out1, &vcc2, &out2);
 
-	USART_MessageTypeDef msg = FSM01M1_USART_vCOM_CreateMessage();
+	USART_MessageTypeDef msg = NUCLEO_USART_vCOM_CreateMessage();
 
 	bool result = vcc && vcc1 && out1 && vcc2 && out2;
 

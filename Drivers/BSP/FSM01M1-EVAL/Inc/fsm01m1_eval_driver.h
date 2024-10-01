@@ -163,7 +163,7 @@ void FSM01M1_OUT2_DSC_OFF(void);
 void FSM01M1_CUTOFF2_CTRL_ON(void);
 void FSM01M1_CUTOFF2_CTRL_OFF(void);
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
+void FSM01M1_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 void FSM01M1_B1_USER_activation_callback(void);
 void FSM01M1_IN2_activation_callback(void);
 void FSM01M1_OUT1_DIAG_alert_callback(void);
