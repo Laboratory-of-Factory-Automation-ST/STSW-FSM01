@@ -74,7 +74,6 @@ void FSM01M1_DIAG_splash_msg();
 void FSM01M1_DIAG_read(DIAG_DeviceTypeDef dev, DIAG_FormatTypeDef fmt);
 void FSM01M1_DIAG_reset_devices();
 void FSM01M1_DIAG_switch(DIAG_DeviceTypeDef dev, DIAG_ActionTypeDef act);
-void FSM01M1_DIAG_resolve(char * cmd, DIAG_DeviceTypeDef target);
 void FSM01M1_DIAG_levels();
 void FSM01M1_DIAG_states();
 void FSM01M1_DIAG_help();
@@ -82,32 +81,17 @@ void FSM01M1_DIAG_list_devices();
 void FSM01M1_DIAG_list_actions();
 void FSM01M1_DIAG_pulse(DIAG_DeviceTypeDef dev, char * config_str);
 void FSM01M1_DIAG_single_pulse(DIAG_DeviceTypeDef dev, uint32_t duration);
+void FSM01M1_DIAG_resolve(char * cmd, DIAG_DeviceTypeDef target);
 
 /* Exported functions --------------------------------------------------------*/
 
 /**
- * @brief Runs a diagnostic IO command line application
- * @param huart: uart handle
+ * @brief Handles messages routed to the board
+ * @param msg: message
  * @retval None
  */
-void FSM01M1_DIAG_IO_Loop(UART_HandleTypeDef * huart) {
-	NUCLEO_USART_vCOM_Config(huart);
-	cmd = NUCLEO_USART_vCOM_CreateMessage();
-	msg = NUCLEO_USART_vCOM_CreateMessage();
-
-	FSM01M1_DIAG_splash_msg();
-	while(1) {
-		if (cmd.flag == ready) {
-			if(strncmp(cmd.data, "fsm01m1_", 8) != 0) return;
-
-			FSM01M1_DIAG_resolve(cmd.data, all);
-			cmd.Reset(&cmd);
-			cmd.flag = idle;
-		}
-		if (cmd.flag == idle) {
-			NUCLEO_USART_vCOM_ReadLine(&cmd);
-		}
-	}
+void FSM01M1_DIAG_Handle(USART_MessageTypeDef * msg) {
+	FSM01M1_DIAG_resolve(msg->data, all);
 }
 
 /**
@@ -164,18 +148,6 @@ void FSM01M1_DIAG_resolve(char * cmd, DIAG_DeviceTypeDef target) {
 }
 
 /* Private functions ---------------------------------------------------------*/
-
-/**
- * @brief Prints starting message
- * @retval None
- */
-void FSM01M1_DIAG_splash_msg() {
-	msg.Reset(&msg);
-	msg.AppendStr("***** STEVAL-FSM01M1 DIAGNOSTIC TOOL *****\n", &msg);
-	msg.AppendStr("* Type help for usage information", &msg);
-	NUCLEO_USART_vCOM_WriteLine(&msg);
-	NUCLEO_USART_vCOM_WriteChar('\n');
-}
 
 /**
  * @brief Prints help message

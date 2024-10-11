@@ -72,28 +72,12 @@ void STEST01A1_DIAG_demag_stat();
 /* Exported functions --------------------------------------------------------*/
 
 /**
- * @brief Runs a diagnostic IO command line application
- * @param huart: uart handle
+ * @brief Handles messages routed to the board
+ * @param msg: message
  * @retval None
  */
-void STEST01A1_DIAG_IO_Loop(UART_HandleTypeDef * huart) {
-	NUCLEO_USART_vCOM_Config(huart);
-	cmd = NUCLEO_USART_vCOM_CreateMessage();
-	msg = NUCLEO_USART_vCOM_CreateMessage();
-
-	STEST01A1_DIAG_splash_msg();
-	while(1) {
-		if (cmd.flag == ready) {
-			if (strncmp(cmd.data, "stest01a1_", 10) != 0) return;
-
-			STEST01A1_DIAG_resolve(cmd.data, all);
-			cmd.Reset(&cmd);
-			cmd.flag = idle;
-		}
-		if (cmd.flag == idle) {
-			NUCLEO_USART_vCOM_ReadLine(&cmd);
-		}
-	}
+void STEST01A1_DIAG_Handle(USART_MessageTypeDef * msg) {
+	STEST01A1_DIAG_resolve(msg->data, all);
 }
 
 /**
@@ -143,18 +127,6 @@ void STEST01A1_DIAG_resolve(char * cmd, DIAG_DeviceTypeDef target) {
 }
 
 /* Private functions ---------------------------------------------------------*/
-
-/**
- * @brief Prints starting message
- * @retval None
- */
-void STEST01A1_DIAG_splash_msg() {
-	msg.Reset(&msg);
-	msg.AppendStr("***** STEST-01A1 DIAGNOSTIC TOOL *****\n", &msg);
-	msg.AppendStr("* Type help for usage information", &msg);
-	NUCLEO_USART_vCOM_WriteLine(&msg);
-	NUCLEO_USART_vCOM_WriteChar('\n');
-}
 
 /**
  * @brief Prints help message

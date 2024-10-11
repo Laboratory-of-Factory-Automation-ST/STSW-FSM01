@@ -34,7 +34,7 @@ extern "C" {
 
 
 /* Exported functions --------------------------------------------------------*/
-void STEST01A1_DIAG_IO_Loop(UART_HandleTypeDef * huart);
+void STEST01A1_DIAG_Handle(USART_MessageTypeDef * msg);
 
 #ifdef	 __cplusplus
 }

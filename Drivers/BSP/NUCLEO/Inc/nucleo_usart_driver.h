@@ -70,6 +70,7 @@ HAL_StatusTypeDef NUCLEO_USART_vCOM_WriteChar(char c);
 HAL_StatusTypeDef NUCLEO_USART_vCOM_QuickWrite(char * fmt_str);
 HAL_StatusTypeDef NUCLEO_USART_vCOM_QuickWriteLine(char * fmt_str);
 HAL_StatusTypeDef NUCLEO_USART_vCOM_Status();
+void NUCLEO_USART_vCOM_Scan(UART_HandleTypeDef * huart);
 
 #ifdef	 __cplusplus
 }
