@@ -12,7 +12,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "fsm01m1_eval_tests.h"
 #include "fsm01m1_eval_driver.h"
-//#include "fsm01m1_eval_usart_driver.h"
 #include "nucleo_usart_driver.h"
 /* Private types -------------------------------------------------------------*/
 

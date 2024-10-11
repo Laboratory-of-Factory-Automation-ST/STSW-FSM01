@@ -22,6 +22,8 @@
 #include "stm32f4xx_hal_uart.h"
 #include "stdio.h"
 #include "string.h"
+#include "fsm01m1_eval_diagnostic_driver.h"
+#include "stest01a1_eval_diagnostic_driver.h"
 
 /* Private constants ---------------------------------------------------------*/
 #define USART_COM_TIMEOUT 100
@@ -31,6 +33,8 @@ UART_HandleTypeDef vCOM;
 UART_HandleTypeDef * p_vCOM = NULL;
 USART_MessageTypeDef * p_msg = NULL;
 char rx_buffer[USART_MAX_MSG_LEN];
+USART_MessageTypeDef msg;
+USART_MessageTypeDef cmd;
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -215,6 +219,41 @@ HAL_StatusTypeDef NUCLEO_USART_vCOM_ReadLine(USART_MessageTypeDef * msg) {
 }
 
 /**
+ * @brief Routes received message to correct board resolver
+ * @param msg: command message
+ * @retval None
+ */
+void NUCLEO_USART_vCOM_Route(USART_MessageTypeDef * msg) {
+	if (strncmp(msg->data, "fsm01m1_", 8) == 0) FSM01M1_DIAG_Handle(msg);
+	else if (strncmp(msg->data, "stest01a1_", 10) == 0) STEST01A1_DIAG_Handle(msg);
+	else NUCLEO_USART_vCOM_QuickWriteLine("Device not found");
+
+	msg->Reset(msg);
+	msg->flag = idle;
+}
+
+/**
+ * @brief Scans for serial input
+ * @param huart: uart handle
+ * @retval None
+ */
+void NUCLEO_USART_vCOM_Scan(UART_HandleTypeDef * huart) {
+	if (p_vCOM == NULL) {
+		NUCLEO_USART_vCOM_Config(huart);
+		cmd = NUCLEO_USART_vCOM_CreateMessage();
+		msg = NUCLEO_USART_vCOM_CreateMessage();
+
+		msg.Reset(&msg);
+		msg.AppendStr("***** IPS EVALUATION DIAGNOSTIC TOOL *****\n", &msg);
+		msg.AppendStr("* Type help for usage information", &msg);
+		NUCLEO_USART_vCOM_WriteLine(&msg);
+		NUCLEO_USART_vCOM_WriteChar('\n');
+	}
+
+	if (cmd.flag == idle) NUCLEO_USART_vCOM_ReadLine(&cmd);
+}
+
+/**
  * @brief Overrides HAL_UARTEx_RxEventCallback
  * @param huart: uart handle
  * @param Size: size of received data
@@ -233,9 +272,10 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 				NUCLEO_USART_vCOM_FlushWriteLine(p_msg);
 				break;
 			case wait:
-				p_msg->flag = ready;
+				NUCLEO_USART_vCOM_Route(p_msg);
 				break;
 			case ready:
+				break;
 			default:
 				break;
 		}

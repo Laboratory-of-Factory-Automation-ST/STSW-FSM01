@@ -206,9 +206,10 @@ int main(void)
 	  FSM01M1_user_LED_green_OFF();
 //	  FSM01M1_TimeLoop_Short();
 
-	  FSM01M1_DIAG_IO_Loop(&huart2);
-	  STEST01A1_DIAG_IO_Loop(&huart2);
-	  NUCLEO_USART_vCOM_QuickWriteLine("Device not found");
+//	  FSM01M1_DIAG_IO_Loop(&huart2);
+//	  STEST01A1_DIAG_IO_Loop(&huart2);
+//	  NUCLEO_USART_vCOM_QuickWriteLine("Device not found");
+	  NUCLEO_USART_vCOM_Scan(&huart2);
   }
 
     /* USER CODE END WHILE */

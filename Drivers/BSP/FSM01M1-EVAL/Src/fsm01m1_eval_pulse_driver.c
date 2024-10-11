@@ -23,9 +23,6 @@
 
 #define MICROS 1000000
 
-//#define OUT1_TIM_HANDLE &htim4
-//#define OUT2_TIM_HANDLE &htim1
-
 void FSM01M1_PULSE_DSC_Reset(TIM_HandleTypeDef * htim);
 
 /**
