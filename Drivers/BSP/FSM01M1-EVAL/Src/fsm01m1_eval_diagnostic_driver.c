@@ -67,8 +67,6 @@ typedef enum USART_Format_t {
 /* buffer for command tokenization */
 static char * token_ctx;
 
-static USART_MessageTypeDef cmd;
-static USART_MessageTypeDef msg;
 /* Private function prototypes -----------------------------------------------*/
 void FSM01M1_DIAG_splash_msg();
 void FSM01M1_DIAG_read(DIAG_DeviceTypeDef dev, DIAG_FormatTypeDef fmt);
@@ -106,7 +104,9 @@ void FSM01M1_DIAG_resolve(char * cmd, DIAG_DeviceTypeDef target) {
 
 	if (arg == NULL) return;
 	arg[strcspn(arg, "\r\n")] = '\0';
-	arg = &arg[strspn(arg, "fsm01m1_")];
+	char * prefix = "fsm01m1.";
+	size_t shift = strstr(arg, prefix) ? strlen(prefix) : 0;
+	arg = &arg[shift];
 
 	if (arg[0] == '\0') return;
 	else if (strcmp(arg, "vcc") == 0) FSM01M1_DIAG_resolve(NULL, vcc);
@@ -135,7 +135,6 @@ void FSM01M1_DIAG_resolve(char * cmd, DIAG_DeviceTypeDef target) {
 	else if (strcmp(arg, "help") == 0) FSM01M1_DIAG_help();
 	else if (strcmp(arg, "functions") == 0) FSM01M1_DIAG_list_devices();
 	else if (strcmp(arg, "actions") == 0) FSM01M1_DIAG_list_actions();
-	else if (strcmp(arg, "clear") == 0) NUCLEO_USART_vCOM_Clear();
 	else if (strcmp(arg, "pulse") == 0) {
 //		FSM01M1_DIAG_pulse(target, cmd);
 		FSM01M1_DIAG_single_pulse(out1, 1000);

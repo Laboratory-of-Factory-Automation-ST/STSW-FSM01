@@ -53,8 +53,6 @@ typedef enum DIAG_Format_t {
 /* buffer for command tokenization */
 static char * token_ctx;
 
-static USART_MessageTypeDef cmd;
-static USART_MessageTypeDef msg;
 /* Private function prototypes -----------------------------------------------*/
 void STEST01A1_DIAG_splash_msg();
 void STEST01A1_DIAG_read(DIAG_DeviceTypeDef dev, DIAG_FormatTypeDef fmt);
@@ -92,7 +90,9 @@ void STEST01A1_DIAG_resolve(char * cmd, DIAG_DeviceTypeDef target) {
 
 	if (arg == NULL) return;
 	arg[strcspn(arg, "\r\n")] = '\0';
-	arg = &arg[strspn(arg, "stest01a1_")];
+	char * prefix = "stest01a1.";
+	size_t shift = strstr(arg, prefix) ? strlen(prefix) : 0;
+	arg = &arg[shift];
 
 	if (arg[0] == '\0') return;
 	else if (strcmp(arg, "out") == 0) STEST01A1_DIAG_resolve(NULL, out);
@@ -118,7 +118,6 @@ void STEST01A1_DIAG_resolve(char * cmd, DIAG_DeviceTypeDef target) {
 	else if (strcmp(arg, "help") == 0) STEST01A1_DIAG_help();
 	else if (strcmp(arg, "functions") == 0) STEST01A1_DIAG_list_devices();
 	else if (strcmp(arg, "actions") == 0) STEST01A1_DIAG_list_actions();
-	else if (strcmp(arg, "clear") == 0) NUCLEO_USART_vCOM_Clear();
 	else {
 		msg.Reset(&msg);
 		msg.AppendStr("Invalid command, no actions performed", &msg);
