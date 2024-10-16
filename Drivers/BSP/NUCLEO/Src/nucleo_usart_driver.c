@@ -24,6 +24,7 @@
 #include "string.h"
 #include "fsm01m1_eval_diagnostic_driver.h"
 #include "stest01a1_eval_diagnostic_driver.h"
+#include "nucleo_exports.h"
 
 /* Private constants ---------------------------------------------------------*/
 #define USART_COM_TIMEOUT 100
@@ -224,9 +225,14 @@ HAL_StatusTypeDef NUCLEO_USART_vCOM_ReadLine(USART_MessageTypeDef * msg) {
  * @retval None
  */
 void NUCLEO_USART_vCOM_Route(USART_MessageTypeDef * msg) {
-	if (strncmp(msg->data, "fsm01m1_", 8) == 0) FSM01M1_DIAG_Handle(msg);
-	else if (strncmp(msg->data, "stest01a1_", 10) == 0) STEST01A1_DIAG_Handle(msg);
-	else NUCLEO_USART_vCOM_QuickWriteLine("Device not found");
+	char * raw = &(msg->data[0]);
+	if (raw[0] == '\r' || raw[0] == '\n') raw = raw + 1;
+	if (strlen(raw) > 0) {
+		if (strcmp(raw, "clear") == 0) NUCLEO_USART_vCOM_Clear();
+		else if (strncmp(raw, "fsm01m1.", 8) == 0) FSM01M1_DIAG_Handle(msg);
+		else if (strncmp(raw, "stest01a1.", 10) == 0) STEST01A1_DIAG_Handle(msg);
+		else NUCLEO_USART_vCOM_QuickWriteLine("Device not found");
+	}
 
 	msg->Reset(msg);
 	msg->flag = idle;

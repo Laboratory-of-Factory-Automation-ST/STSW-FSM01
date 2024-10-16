@@ -52,6 +52,11 @@ typedef struct USART_Message_t {
 	void (* Reset)(struct USART_Message_t * msg);
 } USART_MessageTypeDef;
 
+/* Exported vars -------------------------------------------------------------*/
+// TODO: Possible race condition hazard, think about more enclosed solution
+extern USART_MessageTypeDef msg;
+extern USART_MessageTypeDef cmd;
+
 /* Exported functions --------------------------------------------------------*/
 int NUCLEO_USART_vCOM_Config(UART_HandleTypeDef * huart);
 USART_MessageTypeDef NUCLEO_USART_vCOM_CreateMessage();
