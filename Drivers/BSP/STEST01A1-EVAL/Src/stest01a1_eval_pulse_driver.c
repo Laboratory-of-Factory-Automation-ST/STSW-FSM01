@@ -42,29 +42,9 @@ HAL_StatusTypeDef STEST01A1_PULSE_PulseGen_TIM_Config(TIM_HandleTypeDef * htim, 
 
 	uint32_t Prescaler = (BusFreq/MICROS) * Time_Base;
 
-	htim->Init.Prescaler = Prescaler;
-	htim->Init.Period = Period_Ticks;
-	if (HAL_TIM_PWM_Init(htim) != HAL_OK) Error_Handler();
-
-	__HAL_LOCK(htim);
-	switch (Channel) {
-		case TIM_CHANNEL_1:
-			TIM->CCR1 = Pulse_Ticks;
-			break;
-		case TIM_CHANNEL_2:
-			TIM->CCR2 = Pulse_Ticks;
-			break;
-		case TIM_CHANNEL_3:
-			TIM->CCR3 = Pulse_Ticks;
-			break;
-		case TIM_CHANNEL_4:
-			TIM->CCR4 = Pulse_Ticks;
-			break;
-		default:
-			Error_Handler();
-			break;
-	}
-	__HAL_UNLOCK(htim);
+	__HAL_TIM_SET_PRESCALER(htim, Prescaler);
+	__HAL_TIM_SET_AUTORELOAD(htim, Period_Ticks < 2 ? 1 : Period_Ticks - 1);
+	__HAL_TIM_SET_COMPARE(htim, Channel, Period_Ticks < 2 && Pulse_Ticks == 1 ? 2 : Pulse_Ticks);
 
 	return HAL_OK;
 }

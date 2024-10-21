@@ -27,6 +27,7 @@
 #include "fsm01m1_eval_driver.h"
 #include "stest01a1_eval_diagnostic_driver.h"
 #include "fsm01m1_eval_pulse_driver.h"
+#include "stest01a1_eval_pulse_driver.h"
 
 /* USER CODE END Includes */
 
